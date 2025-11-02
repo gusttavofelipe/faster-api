@@ -25,6 +25,8 @@ class Transaction[OrmModelT: DeclarativeBaseModel]:
             await self.session.begin()
             self._in_transaction = True
             logger.info("Transaction has begun")
+        else:
+            logger.info("Reusing existing transaction")
         return self
 
     async def __aexit__(
@@ -37,16 +39,18 @@ class Transaction[OrmModelT: DeclarativeBaseModel]:
 
         if not self._in_transaction:
             return
-
         try:
-            if exc_v:
-                logger.warning("Exception occurred within transaction, rolling back")
+            if exc_v and exc_t:
+                error: str = f"[{exc_t.__name__}]: {exc_v}"
+                logger.error(
+                    f"Exception occurred within transaction, rolling back {error}"
+                )
                 await self.session.rollback()
             else:
-                logger.info(f"Committing transaction on session")
+                logger.info("Committing transaction on session")
                 await self.session.commit()
         except SQLAlchemyError as exc:
-            logger.error(f"Error during commit/rollback: {exc}")
+            logger.error(f"Error during commit/rollback: \n{exc}")
             await self.session.rollback()
             raise
         finally:

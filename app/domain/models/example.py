@@ -1,10 +1,10 @@
-from sqlalchemy import String
+from app.domain.models.base import CreateBaseModel
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
-from app.domain.models.base import DeclarativeBaseModel
 
 
-class ExampleModel(DeclarativeBaseModel):
-    __tablename__ = "example"
+class ExampleModel(CreateBaseModel):
+    __tablename__: str = "example"
 
-    field: Mapped[str | None] = mapped_column(String, primary_key=True)
-    field2: Mapped[str | None] = mapped_column(String, nullable=True)
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)

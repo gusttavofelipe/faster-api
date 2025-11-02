@@ -2,10 +2,11 @@ from typing import Self
 from fastapi import Request
 from pydantic import AnyHttpUrl, BaseModel, Field, NonNegativeInt
 
-from app.domain.schemas.query_params import QueryParams
+from app.domain.schemas.base import BaseSchema
+from app.domain.schemas.query_params import BaseQueryParams
 
 
-class CollectionResponse[SchemaT](BaseModel):
+class CollectionResponse[SchemaT: BaseSchema](BaseModel):
     """Schema for a paginated collection response.
     Represents a collection of items with pagination metadata.
     """
@@ -20,7 +21,7 @@ class CollectionResponse[SchemaT](BaseModel):
         cls,
         request: Request,
         results: list[SchemaT],
-        query_params: QueryParams,
+        query_params: BaseQueryParams,
         count: int,
     ) -> Self:
         """Parses data and request information to create a CollectionResponse instance.
@@ -30,7 +31,7 @@ class CollectionResponse[SchemaT](BaseModel):
                 The incoming request object, used to build pagination URLs.
             results (list[SchemaT]):
                 The list of items for the current page, expected to be Pydantic schemas.
-            query_params (QueryParams):
+            query_params (BaseQueryParams):
                 The query parameters used for pagination (offset and limit).
             count (int): The total number of items in the collection across all pages.
 
@@ -51,3 +52,5 @@ class CollectionResponse[SchemaT](BaseModel):
         }
 
         return cls.model_validate(collection_response)
+
+# IMPLEMENTAR: Keyset/Cursor

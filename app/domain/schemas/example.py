@@ -1,38 +1,37 @@
-from fastapi import Query
-from app.domain.schemas.query_params import QueryParams
-from pydantic import Field, TypeAdapter
-from app.domain.schemas.base import BaseSchema
+from app.domain.schemas.query_params import BaseQueryParams
+from pydantic import Field, NonNegativeInt, TypeAdapter
+from app.domain.schemas.base import BaseSchema, OutSchema
 
 
 class ExampleBase(BaseSchema):
-    """Represents the base fields for a example.
+    """Represents the base fields for the `example` moldel."""
 
-    Args:
-        BaseSchema (BaseSchema):
-            Schema base class providing validation and commom functionality
-    """
-
-    field: str = Field(description="Example of description", examples=["example1"])
-    field2: str | None = Field(
-        None,
-        description="Example of description",
-        examples=["example1"]
+    name: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=60,
+        description="Name",
+        examples=["Gustavo"],
     )
+    age: NonNegativeInt | None = Field(
+        default=None, gt=-1, lt=117, description="Age", examples=[20]
+    )  # type: ignore - this ingore shouldn't exist
+
 
 class ExampleCreate(ExampleBase):
     ...
 
 
-class ExampleResponse(ExampleBase):
+class ExampleUpdate(ExampleBase):
     ...
 
 
-class ExampleQueryParams(QueryParams):
-    field2: str | None = Query(
-        None,
-        description="Example of description",
-        examples=["example2"]
-    )
+class ExampleResponse(ExampleBase, OutSchema):
+    ...
+
+
+class ExampleQueryParams(BaseQueryParams, ExampleBase):
+    ...
 
 
 ExampleCollectionOut: TypeAdapter[list[ExampleResponse]] = TypeAdapter(

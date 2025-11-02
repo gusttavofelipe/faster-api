@@ -1,10 +1,14 @@
+from app.infra.db.manager import DatabaseManager
+from asyncpg import Pool
+
 from app.infra.db.transaction import Transaction
-from app.core.exceptions.db import ObjectNotFound
 from typing import Any, Sequence
+from sqlalchemy.engine.result import Result
 
 from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.selectable import Select
+from sqlalchemy.sql.elements import BinaryExpression
 
 from app.infra.db.helpers.query_builder import build_query
 from app.domain.models.base import DeclarativeBaseModel
@@ -25,11 +29,10 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
     def transaction(self) -> Transaction[OrmModelT]:
         """Creates a new transaction context."""
 
-        return Transaction(session=self.session)
+        return Transaction[OrmModelT](session=self.session)
 
     async def create(
-        self, orm_model: OrmModelT,
-        transaction: Transaction[OrmModelT]
+        self, orm_model: OrmModelT, transaction: Transaction[OrmModelT]
     ) -> OrmModelT:
         """Creates a new record in the database."""
 
@@ -46,35 +49,54 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
         transaction.insert_all(orm_models=orm_models)
         await transaction.session.flush()
 
+    async def bulk_insert_copy(
+        self, table: str, columns: list[str], data: Sequence[dict[str, Any]]
+    ) -> None:
+        pool: Pool = await DatabaseManager.get_asyncpg_pool()
+
+        async with pool.acquire() as connection:
+            records = [
+                tuple(record.get(col) for col in columns) for record in data
+            ]
+            await connection.copy_records_to_table(
+                table_name=table, records=records, columns=columns
+            )
+
     async def get(
-        self,
-        filters: dict[str, Any],
-        transaction: Transaction[OrmModelT]
+        self,filters: dict[str, Any], transaction: Transaction[OrmModelT] | None = None
     ) -> OrmModelT | None:
         """Retrieves a single record based on the provided filters."""
 
-        query: Select[Any] = build_query(orm_model=self.orm_model, filter=filters)
-        data: OrmModelT | None = (await transaction.session.execute(query)).scalars().first()
+        session: AsyncSession = transaction.session if transaction else self.session
+        query: Select[tuple[OrmModelT]] = build_query(
+            orm_model=self.orm_model, filter=filters
+        ) # type: ignore
+        data: OrmModelT | None = (await session.execute(query)).scalars().first()
         return data
 
     async def query(
-        self, filter_params: dict[str, Any],
-        transaction: Transaction[OrmModelT]
+        self,
+        filter_params: dict[str, Any],
+        transaction: Transaction[OrmModelT] | None = None
     ) -> list[OrmModelT]:
-        """Retrieves a list of records based on query parameters."""
+        """Retrieves a list of records based on query parameters.
 
-        limit = filter_params.pop("limit", 10)
-        offset = filter_params.pop("offset", 0)
+        Uses the session's automatic transaction management.
+        No explicit transaction needed for simple reads.
+        """
 
-        query: Select[Any] = build_query(orm_model=self.orm_model, filter=filter_params)
-
+        session: AsyncSession = transaction.session if transaction else self.session
+        limit: int = filter_params.pop("limit", 10)
+        offset: int = filter_params.pop("offset", 0)
+        query: Select[tuple[OrmModelT]] = build_query(
+            orm_model=self.orm_model, filter=filter_params
+        ) # type: ignore
         if limit is not None:
             query = query.limit(limit)
-
         if offset is not None:
             query = query.offset(offset)
 
-        data: Sequence[OrmModelT] = (await transaction.session.execute(query)).scalars().all()
+        data: Sequence[OrmModelT] = (await session.execute(query)).scalars().all()
 
         return list(data)
 
@@ -83,68 +105,25 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
         filters: dict[str, Any],
         data: dict[str, Any],
         transaction: Transaction[OrmModelT]
-    ) -> None:
-        """Partially update records matching filters with the provided data.
+    ) -> OrmModelT | None:
+        """Partially update records matching filters with the provided data."""
 
-        Supported operators:
-            - __eq (default if no operator)
-            - __ne  (not equal)
-            - __lt  (less than)
-            - __lte (less or equal)
-            - __gt  (greater than)
-            - __gte (greater or equal)
-            - __in (value must be a list/tuple)
-
-        Args:
-            filters (dict[str, Any]):
-             Dict of column names and values to filter the target records.
-            data( dict[str, Any]):
-                Dict of column names and new values to update those records.
-        """
-
-        conditions = []
-
-        for key, value in filters.items():
-            if "__" in key:
-                col_name, op = key.split("__", 1)
-            else:
-                col_name, op = key, "eq"
-
-            column = getattr(self.orm_model, col_name)
-
-            if op == "eq":
-                conditions.append(column == value)
-            elif op == "ne":
-                conditions.append(column != value)
-            elif op == "lt":
-                conditions.append(column < value)
-            elif op == "lte":
-                conditions.append(column <= value)
-            elif op == "gt":
-                conditions.append(column > value)
-            elif op == "gte":
-                conditions.append(column >= value)
-            elif op == "in":
-                conditions.append(column.in_(value))
-            else:
-                raise ValueError(f"Unsupported operator: {op}")
+        conditions: list[BinaryExpression[Any]] = build_query(
+            orm_model=self.orm_model, filter=filters, return_conditions=True
+        ) # type: ignore
 
         stmt = (
             sql_update(self.orm_model)
             .where(*conditions)
             .values(**data)
-            .execution_options(synchronize_session="fetch")
+            .execution_options(synchronize_session=False)
+            .returning(self.orm_model)
         )
 
-        await transaction.session.execute(stmt)
+        result: Result[tuple[OrmModelT]] = await transaction.session.execute(stmt)
+        return result.scalars().first()
 
     async def delete(
-        self: "PostgresRepository", filter: dict, transaction: Transaction
+        self, orm_model: OrmModelT, transaction: Transaction[OrmModelT]
     ) -> None:
-        """Remove a given ORM model instance from the database."""
-
-        instance = await self.get(filters=filter, transaction=transaction)
-        if not instance:
-            raise ObjectNotFound
-
-        await transaction.session.delete(instance)
+        await transaction.session.delete(orm_model)

@@ -1,7 +1,7 @@
 from fastapi.param_functions import Depends
 from app.domain.models.example import ExampleModel
 from app.infra.repositories.postgres.base import PostgresRepository
-from app.infra.db.session import DatabaseDependency
+from app.infra.db.manager import DatabaseDependency
 from typing import Annotated, Type
 
 

@@ -1,4 +1,3 @@
-# Variáveis
 PODMAN_COMPOSE = podman-compose
 PODMAN_COMPOSE_FILE = podman-compose.yml
 
@@ -20,7 +19,7 @@ help:
 	@echo "  make test-matching K=pattern           - Run tests matching keyword pattern"
 	@echo "  make coverage                          - Run tests with coverage"
 	@echo "  make lint                              - Run lint checks"
-	@echo "  make lint-fix                          - Run lint checks and auto-fix + format"
+	@echo "  make lintfix                          - Run lint checks and auto-fix + format"
 
 
 .env: .example.env
@@ -79,7 +78,7 @@ coverage:
 lint:
 	@uv run ruff check .
 
-lint-fix:
+lintfix:
 	@uv run ruff check . --fix
 	@uv run ruff format --line-length 88 .
 

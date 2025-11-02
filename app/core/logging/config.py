@@ -1,5 +1,4 @@
 from typing import Any
-from app.core.logging import Formatter
 
 
 LOGGING_CONFIG: dict[str, Any] = {
@@ -9,7 +8,7 @@ LOGGING_CONFIG: dict[str, Any] = {
         "default": {
             "()": "app.core.logging.Formatter",
             "use_colors": True,
-            "show_path": False,  # Para logs do uvicorn, não mostra o path
+            "show_path": False,  # For uvicorn logs, it doesn't show the path
         },
     },
     "handlers": {
