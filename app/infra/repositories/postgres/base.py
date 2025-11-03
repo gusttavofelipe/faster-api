@@ -1,9 +1,10 @@
-from typing import AsyncGenerator
 from app.infra.db.manager import DatabaseManager
 from asyncpg import Pool
 from itertools import islice
 from app.infra.db.transaction import Transaction
-from typing import Any, Sequence, Iterable
+from typing import (
+    Any, Iterator, Sequence, Iterable, AsyncGenerator, Generator, Type
+)
 from sqlalchemy.engine.result import Result
 
 from sqlalchemy import update as sql_update
@@ -14,7 +15,6 @@ from sqlalchemy.sql.elements import BinaryExpression
 from app.infra.db.helpers.query_builder import build_query
 from app.domain.models.base import DeclarativeBaseModel
 from app.infra.repositories.interfaces.base import Repository
-from typing import Type
 
 
 class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT]):
@@ -61,9 +61,9 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
         async def get_batches(
             iterable: Iterable[dict[str, Any]], size: int
         ) -> AsyncGenerator[list[dict[str, Any]], None]:
-            """Gera batches de tamanho `size` a partir de qualquer iterável."""
+            """Generates batches of size `size` from any iterable."""
 
-            it = iter(iterable)
+            it: Iterator[dict[str, Any]] = iter(iterable)
             while True:
                 batch: list[dict[str, Any]] = list(islice(it, size))
                 if not batch:
@@ -73,14 +73,14 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
         pool: Pool = await DatabaseManager.get_asyncpg_pool()
 
         async with pool.acquire() as connection:
-            async for batch in get_batches(data, batch_size):
-                records_iter = (
+            async for batch in get_batches(iterable=data, size=batch_size):
+                records_gen: Generator[tuple[Any | None, ...]] = (
                     tuple(record.get(col, None) for col in columns)
                     for record in batch
                 )
                 await connection.copy_records_to_table(
                     table_name=table,
-                    records=records_iter,
+                    records=records_gen,
                     columns=columns,
                 )
 

@@ -25,7 +25,6 @@ from asyncpg.exceptions import PostgresError
 from itertools import chain
 
 
-
 class ExampleUsecase:
     """Handles business logic for example table."""
 
@@ -106,9 +105,8 @@ class ExampleUsecase:
         first_dict: dict[str, Any] = next(it).model_dump()
         columns: list[str] = list(first_dict.keys())
 
-        rest_iter: Generator[dict[str, Any]] = (item.model_dump() for item in it)
-
-        prepared_data_iter: chain[dict[str, Any]] = chain([first_dict], rest_iter)
+        rest_gen: Generator[dict[str, Any]] = (item.model_dump() for item in it)
+        prepared_data_iter: Iterator[dict[str, Any]] = chain([first_dict], rest_gen)
 
         try:
             logger.info("Performing bulk insert...")

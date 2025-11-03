@@ -1,6 +1,4 @@
-from typing import Any
 from sqlalchemy import DateTime
-from uuid import uuid4
 from sqlalchemy.orm.base import Mapped
 from sqlalchemy.orm._orm_constructors import mapped_column
 from uuid import UUID
@@ -14,12 +12,8 @@ class DeclarativeBaseModel(DeclarativeBase):
     ...
 
 
-def get_utc_now():
-    return datetime.now(UTC)
-
-
 class CreateBaseModel(DeclarativeBaseModel):
-    __abstract__ = True
+    __abstract__: bool = True
 
     pk_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     id: Mapped[UUID] = mapped_column(
