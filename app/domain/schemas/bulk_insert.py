@@ -18,9 +18,9 @@ class BulkInsertCreate[SchemaT: BaseSchema](BaseSchema):
 
 
 class BulkInsertResponse(BaseSchema):
-    inserted_rows: int = Field(
-        ..., description="Number of inserted rows", examples=[324]
-    )
+    # inserted_rows: int = Field(
+    #     ..., description="Number of inserted rows", examples=[324]
+    # )
     elapsed_time: float = Field(
         ..., description="Time spent for insertion", examples=[32.14]
     )

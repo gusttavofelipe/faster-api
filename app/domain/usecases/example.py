@@ -1,4 +1,4 @@
-from typing import Any
+from app.core.logging import logger
 from timeit import default_timer
 from pydantic import UUID4
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -7,10 +7,9 @@ from app.core.exceptions.db import (
     ObjectNotFound,
     DBOperationError,
 )
-from typing import Annotated
+from typing import Annotated, Generator, Iterator, Any
 from fastapi import Depends, Request
 
-from app.domain.models.base import ensure_defaults
 from app.domain.models.example import ExampleModel
 from app.domain.schemas.bulk_insert import BulkInsertCreate, BulkInsertResponse
 from app.infra.repositories.example import ExampleRepositoryDependency
@@ -22,6 +21,9 @@ from app.domain.schemas.example import (
     ExampleQueryParams,
     ExampleUpdate,
 )
+from asyncpg.exceptions import PostgresError
+from itertools import chain
+
 
 
 class ExampleUsecase:
@@ -83,6 +85,7 @@ class ExampleUsecase:
                 await self.example_repository.create(
                     orm_model=example_model, transaction=transaction  # type: ignore
                 )
+                breakpoint()
                 await transaction.flush()
                 return ExampleResponse.model_validate(example_model)
         except IntegrityError:
@@ -92,32 +95,42 @@ class ExampleUsecase:
                 message=f"SQLAlchemy error occurred in {method_path}: {exc}"
             )
 
+
     async def bulk_insert(
         self, data: BulkInsertCreate[ExampleCreate]
     ) -> BulkInsertResponse:
         method_path: str = "ExampleUsecase.bulk_insert"
+
         start: float = default_timer()
-        prepared_data: list[dict[str, Any]] = [item.model_dump() for item in data.items]
-        ensure_defaults(data=prepared_data)
-        columns: list[str] = list(prepared_data[0].keys())
+        it: Iterator[ExampleCreate] = iter(data.items)
+        first_dict: dict[str, Any] = next(it).model_dump()
+        columns: list[str] = list(first_dict.keys())
+
+        rest_iter: Generator[dict[str, Any]] = (item.model_dump() for item in it)
+
+        prepared_data_iter: chain[dict[str, Any]] = chain([first_dict], rest_iter)
 
         try:
+            logger.info("Performing bulk insert...")
             await self.example_repository.bulk_insert_copy(
                 table=self.example_repository.orm_model.__tablename__,
                 columns=columns,
-                data=prepared_data,
+                data=prepared_data_iter,
             )
-        except SQLAlchemyError as exc:
-            raise DBOperationError(
-                message=f"SQLAlchemy error occurred in {method_path}: {exc}"
-            )
-        end: float = default_timer()
+            end: float = default_timer()
+            elapsed_time: float = end - start
+            logger.info(f"Bulk insert finished. Elapsed time: {elapsed_time}")
 
-        # FUTURE: to use a worker for scheduling this
-        # task and change response schema
-        return BulkInsertResponse(
-            inserted_rows=len(prepared_data), elapsed_time=end - start
-        )
+            # FUTURE: to use a worker for scheduling this
+            # task and change response schema
+            return BulkInsertResponse(elapsed_time=elapsed_time)
+        except (SQLAlchemyError, PostgresError) as exc:
+            error_type: str = (
+                "SQLAlchemy" if isinstance(exc, SQLAlchemyError) else "Postgres"
+            )
+            raise DBOperationError(
+                message=f"{error_type} error occurred in {method_path}: {exc}"
+            )
 
     async def partial_update(self, data: ExampleUpdate, id: UUID4) -> ExampleResponse:
         method_path: str = "ExampleUsecase.partial_update"

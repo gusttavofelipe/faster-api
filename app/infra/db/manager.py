@@ -50,6 +50,7 @@ class DatabaseManager:
         if cls._pool is None:
             dsn: str = settings.DATABASE_URL.replace("+asyncpg", "")
             cls._pool = await create_pool(dsn=dsn, min_size=5, max_size=20)
+            # increase to min_size=10, max_size=50 if it's to insert millions
         return cls._pool  # type: ignore
 
     @classmethod

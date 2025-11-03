@@ -1,8 +1,9 @@
+from typing import AsyncGenerator
 from app.infra.db.manager import DatabaseManager
 from asyncpg import Pool
-
+from itertools import islice
 from app.infra.db.transaction import Transaction
-from typing import Any, Sequence
+from typing import Any, Sequence, Iterable
 from sqlalchemy.engine.result import Result
 
 from sqlalchemy import update as sql_update
@@ -50,17 +51,38 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
         await transaction.session.flush()
 
     async def bulk_insert_copy(
-        self, table: str, columns: list[str], data: Sequence[dict[str, Any]]
+        self,
+        table: str,
+        columns: list[str],
+        data: Iterable[dict[str, Any]],
+        batch_size: int = 5000
     ) -> None:
+
+        async def get_batches(
+            iterable: Iterable[dict[str, Any]], size: int
+        ) -> AsyncGenerator[list[dict[str, Any]], None]:
+            """Gera batches de tamanho `size` a partir de qualquer iterável."""
+
+            it = iter(iterable)
+            while True:
+                batch: list[dict[str, Any]] = list(islice(it, size))
+                if not batch:
+                    break
+                yield batch
+
         pool: Pool = await DatabaseManager.get_asyncpg_pool()
 
         async with pool.acquire() as connection:
-            records = [
-                tuple(record.get(col) for col in columns) for record in data
-            ]
-            await connection.copy_records_to_table(
-                table_name=table, records=records, columns=columns
-            )
+            async for batch in get_batches(data, batch_size):
+                records_iter = (
+                    tuple(record.get(col, None) for col in columns)
+                    for record in batch
+                )
+                await connection.copy_records_to_table(
+                    table_name=table,
+                    records=records_iter,
+                    columns=columns,
+                )
 
     async def get(
         self,filters: dict[str, Any], transaction: Transaction[OrmModelT] | None = None

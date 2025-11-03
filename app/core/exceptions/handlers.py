@@ -15,7 +15,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def db_operation_error_handler(
         request: Request, exc: DBOperationError
     ) -> JSONResponse:
-        logger.error(exc.message)
+        logger.error(msg=exc.message)
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"error": exc.message},
@@ -25,7 +25,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def object_already_exist_handler(
         request: Request, exc: ObjectAlreadyExistError
     ) -> JSONResponse:
-        logger.warning(f"Object already exists: {exc.message}")
+        logger.warning(msg=f"Object already exists: {exc.message}")
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={"error": exc.message},
@@ -35,7 +35,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def object_not_found_handler(
         request: Request, exc: ObjectNotFound
     ) -> JSONResponse:
-        logger.info(exc.message)
+        logger.warning(msg=exc.message)
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"error": exc.message},
@@ -46,7 +46,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request, exc: Exception
     ) -> JSONResponse:
         error: str = f"Unexpected error [{type(exc).__name__}]: {exc}"
-        logger.exception(error)
+        logger.exception(msg=error)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": error}
         )
