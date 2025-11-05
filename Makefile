@@ -69,11 +69,18 @@ makemigration:
 test:
 	@uv run pytest
 
-test-matching:
-	@uv run pytest ./tests -vv -k $(K)
+test-coverage:
+	@uv run pytest --cov=app --cov-report=term-missing --cov-report=html
+	@rm -f .coverage
+	@xdg-open htmlcov/index.html # if you want to open in the browser automatically
 
-coverage:
-	@uv run pytest --cov=app --cov-report=term-missing --cov-report=xml ./tests/
+test-matching:
+	@uv run pytest -vv -k $(N)
+
+test-suite:
+	@uv run pytest --cov=app --cov-report=term-missing --cov-report=html
+	@rm -f .coverage
+	@xdg-open htmlcov/index.html # if you want to open in the browser automatically
 
 lint:
 	@uv run ruff check .
