@@ -42,12 +42,10 @@ logs:
 
 clean:
 	@echo "Cleaning up..."
-	docker system prune -a --volumes -f
+	podman system prune -a --volumes -f
 
 setup:
 	@echo "Setting up project..."
-	@uv venv
-	@uv lock
 	@uv sync
 	@uv run pre-commit install
 	@uv run alembic upgrade head
@@ -56,9 +54,14 @@ setup:
 run:
 	@uv run python -m app.main
 
-pycache:
-	@echo "Running Clean Pycache..."
+cache:
+	@echo "Cleaning all cached files..."
 	@find . \( -name *.py[co] -o -name __pycache__ \) -delete
+	@rm -rf .ruff_cache
+	@rm -rf .pytest_cache
+	@rm -rf htmlcov
+	@echo "Done."
+
 
 migrate:
 	@PYTHONPATH=$PYTHONPATH:$(pwd) uv run alembic upgrade head
@@ -81,12 +84,5 @@ test-suite:
 	@uv run pytest --cov=app --cov-report=term-missing --cov-report=html
 	@rm -f .coverage
 	@xdg-open htmlcov/index.html # if you want to open in the browser automatically
-
-lint:
-	@uv run ruff check .
-
-lintfix:
-	@uv run ruff check . --fix
-	@uv run ruff format --line-length 88 .
 
 .PHONY: run test generate-coverage lint-check lint-fix
