@@ -9,3 +9,14 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+#Tests
+.coverage
+coverage.xml
+report.html
+htmlcov
+.pytest_cache
+
+# Linters / Refactoring tools
+.ruff_cache
+.ropeproject
