@@ -25,3 +25,29 @@ dev = [
     "pytest-randomly>=4.0.1",
     "ruff>=0.14.3",
 ]
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 90
+
+[tool.ruff.format]
+indent-style = "tab"
+quote-style = "double"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+ignore = [
+    "W191",  # Indentation contains tabs
+    "E101",  # Mixed spaces and tabs (formatter fix already)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"migrations/env.py" = ["F403", "F405"]

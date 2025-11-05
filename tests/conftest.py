@@ -1,58 +1,64 @@
 from contextlib import contextmanager
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import uuid4
-from httpx import AsyncClient, ASGITransport
-from app.main import app
+
+import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+
 from app.domain.usecases.example import ExampleUsecase
-import pytest, pytest_asyncio
+from app.main import app
 
 
 @pytest_asyncio.fixture
 async def async_client():
-    """Shared async client for all route tests."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+	"""Shared async client for all route tests."""
+	transport = ASGITransport(app=app)
+	async with AsyncClient(transport=transport, base_url="http://test") as client:
+		yield client
 
 
 @pytest.fixture
 def mock_usecase(mocker):
-    """Mock for ExampleUsecase using pytest-mock."""
-    mock = mocker.MagicMock()
-    mock.get = mocker.AsyncMock()
-    return mock
+	"""Mock for ExampleUsecase using pytest-mock."""
+	mock = mocker.MagicMock()
+	mock.get = mocker.AsyncMock()
+	return mock
 
 
 @contextmanager
 def override_dependency(app, dependency, replacement):
-    original = app.dependency_overrides.get(dependency)
-    app.dependency_overrides[dependency] = lambda: replacement
-    try:
-        yield
-    finally:
-        if original is not None:
-            app.dependency_overrides[dependency] = original
-        else:
-            app.dependency_overrides.pop(dependency, None)
+	original = app.dependency_overrides.get(dependency)
+	app.dependency_overrides[dependency] = lambda: replacement
+	try:
+		yield
+	finally:
+		if original is not None:
+			app.dependency_overrides[dependency] = original
+		else:
+			app.dependency_overrides.pop(dependency, None)
 
 
 @pytest.fixture
 def mock_example_usecase(mock_usecase):
-    """Automatically override ExampleUsecase for all tests."""
-    with override_dependency(app=app, dependency=ExampleUsecase, replacement=mock_usecase):
-        yield mock_usecase
+	"""Automatically override ExampleUsecase for all tests."""
+	with override_dependency(
+		app=app, dependency=ExampleUsecase, replacement=mock_usecase
+	):
+		yield mock_usecase
 
 
 @pytest.fixture
 def fake_response():
-    def _factory(**overrides):
-        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
-        base = {
-            "id": str(uuid4()),
-            "name": "example",
-            "age": 12,
-            "created_at": now,
-            "updated_at": now,
-        }
-        return {**base, **overrides}
-    return _factory
+	def _factory(**overrides):
+		now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+		base = {
+			"id": str(uuid4()),
+			"name": "example",
+			"age": 12,
+			"created_at": now,
+			"updated_at": now,
+		}
+		return {**base, **overrides}
+
+	return _factory

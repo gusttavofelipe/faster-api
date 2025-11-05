@@ -10,71 +10,62 @@ from app.domain.models.base import DeclarativeBaseModel
 
 
 class Transaction[OrmModelT: DeclarativeBaseModel]:
-    """Transaction manager with minimal overhead."""
+	"""Transaction manager with automatic commit/rollback."""
 
-    __slots__ = ("session", "_in_transaction")
+	__slots__ = ("session", "_should_commit")
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self._in_transaction = False
+	def __init__(self, session: AsyncSession) -> None:
+		self.session = session
+		self._should_commit = False
 
-    async def __aenter__(self) -> Self:
-        """Starts a new transaction if one is not already active."""
+	async def __aenter__(self) -> Self:
+		"""Marks that this context should manage the transaction."""
+		# SQLAlchemy AsyncSession automatically starts a transaction
+		# on the first database operation. No need to call begin() manually.
+		self._should_commit = True
+		logger.debug("Transaction context entered")
+		return self
 
-        if not self.session.in_transaction():
-            await self.session.begin()
-            self._in_transaction = True
-            logger.info("Transaction has begun")
-        else:
-            logger.info("Reusing existing transaction")
-        return self
+	async def __aexit__(
+		self,
+		exc_t: type[BaseException] | None,
+		exc_v: BaseException | None,
+		exc_tb: TracebackType | None,
+	) -> None:
+		"""Finalizes the transaction, committing or rolling back changes."""
+		if not self._should_commit:
+			return
 
-    async def __aexit__(
-        self,
-        exc_t: type[BaseException] | None,
-        exc_v: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Finalizes the transaction, committing or rolling back changes."""
+		try:
+			if exc_v and exc_t:
+				error: str = f"[{exc_t.__name__}]: {exc_v}"
+				logger.error(f"Exception in transaction, rolling back: {error}")
+				await self.session.rollback()
+			else:
+				logger.info("Committing transaction")
+				await self.session.commit()
+		except SQLAlchemyError as exc:
+			logger.error(f"Error during commit/rollback: {exc}")
+			await self.session.rollback()
+			raise
+		finally:
+			self._should_commit = False
 
-        if not self._in_transaction:
-            return
-        try:
-            if exc_v and exc_t:
-                error: str = f"[{exc_t.__name__}]: {exc_v}"
-                logger.error(
-                    f"Exception occurred within transaction, rolling back {error}"
-                )
-                await self.session.rollback()
-            else:
-                logger.info("Committing transaction on session")
-                await self.session.commit()
-        except SQLAlchemyError as exc:
-            logger.error(f"Error during commit/rollback: \n{exc}")
-            await self.session.rollback()
-            raise
-        finally:
-            self._in_transaction = False
+	def insert(self, orm_model: OrmModelT) -> OrmModelT:
+		"""Adds an ORM model to the session for insertion."""
+		self.session.add(orm_model)
+		return orm_model
 
-    def insert(self, orm_model: OrmModelT) -> OrmModelT:
-        """Adds an ORM model to the session for insertion (sync operation)."""
+	def insert_all(self, orm_models: Sequence[OrmModelT]) -> Sequence[OrmModelT]:
+		"""Adds multiple ORM models to the session for insertion."""
+		self.session.add_all(orm_models)
+		return orm_models
 
-        self.session.add(orm_model)
-        return orm_model
+	async def flush(self) -> None:
+		"""Flush pending changes without committing the transaction."""
+		await self.session.flush()
 
-    def insert_all(self, orm_models: Sequence[OrmModelT]) -> Sequence[OrmModelT]:
-        """Adds multiple ORM models to the session for insertion (sync operation)."""
-
-        self.session.add_all(orm_models)
-        return orm_models
-
-    async def flush(self) -> None:
-        """Flush pending changes without committing the transaction."""
-
-        await self.session.flush()
-
-    async def refresh(self, orm_model: OrmModelT) -> OrmModelT:
-        """Refresh an ORM model from the database."""
-
-        await self.session.refresh(orm_model)
-        return orm_model
+	async def refresh(self, orm_model: OrmModelT) -> OrmModelT:
+		"""Refresh an ORM model from the database."""
+		await self.session.refresh(orm_model)
+		return orm_model
