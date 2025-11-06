@@ -16,11 +16,9 @@ help:
 	@echo "  make run                               - Run FastAPI with uvicorn"
 	@echo "  make pycache                           - Remove __pycache__ and *.pyc files"
 	@echo "  make test                              - Run all tests"
-	@echo "  make test-matching K=pattern           - Run tests matching keyword pattern"
-	@echo "  make coverage                          - Run tests with coverage"
-	@echo "  make lint                              - Run lint checks"
-	@echo "  make lintfix                          - Run lint checks and auto-fix + format"
-
+	@echo "  make test-matching N=pattern           - Run tests matching name pattern"
+	@echo "  make coverage                     - Run tests with coverage"
+	@echo "  make lintfix                           - Run pre-commit run for all files"
 
 .env: .example.env
 	@cp .example.env .env || echo "NOTE: review your .env file comparing with .example.env"
@@ -62,7 +60,6 @@ cache:
 	@rm -rf htmlcov
 	@echo "Done."
 
-
 migrate:
 	@PYTHONPATH=$PYTHONPATH:$(pwd) uv run alembic upgrade head
 
@@ -72,7 +69,7 @@ makemigration:
 test:
 	@uv run pytest
 
-test-coverage:
+coverage:
 	@uv run pytest --cov=app --cov-report=term-missing --cov-report=html
 	@rm -f .coverage
 	@xdg-open htmlcov/index.html # if you want to open in the browser automatically
@@ -80,9 +77,8 @@ test-coverage:
 test-matching:
 	@uv run pytest -vv -k $(N)
 
-test-suite:
-	@uv run pytest --cov=app --cov-report=term-missing --cov-report=html
-	@rm -f .coverage
-	@xdg-open htmlcov/index.html # if you want to open in the browser automatically
+
+lintfix:
+	@uv run pre-commit run --all-files
 
 .PHONY: run test generate-coverage lint-check lint-fix

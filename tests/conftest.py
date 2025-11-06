@@ -23,6 +23,11 @@ def mock_usecase(mocker):
 	"""Mock for ExampleUsecase using pytest-mock."""
 	mock = mocker.MagicMock()
 	mock.get = mocker.AsyncMock()
+	mock.query = mocker.AsyncMock()
+	mock.create = mocker.AsyncMock()
+	mock.delete = mocker.AsyncMock()
+	mock.bulk_insert = mocker.AsyncMock()
+	mock.partial_update = mocker.AsyncMock()
 	return mock
 
 
@@ -49,15 +54,15 @@ def mock_example_usecase(mock_usecase):
 
 
 @pytest.fixture
-def fake_response():
+def single_examaple_response_fac():
 	def _factory(**overrides):
 		now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
 		base = {
 			"id": str(uuid4()),
-			"name": "example",
-			"age": 12,
 			"created_at": now,
 			"updated_at": now,
+			"name": "example",
+			"age": 12,
 		}
 		return {**base, **overrides}
 
