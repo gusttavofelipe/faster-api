@@ -76,10 +76,22 @@ jobs:
           
           python3 parse_deps.py
 
+      - name: Read summary for PR body
+        id: summary
+        run: |
+          SUMMARY=$(cat dependency-summary.txt)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Clean up temporary files
+        run: |
+          rm -f parse_deps.py dependency-summary.txt
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "chore: update dependencies"
           branch: deps-update-${{ github.run_id }}
           title: "Update dependencies"
-          body-path: dependency-summary.txt
+          body: ${{ steps.summary.outputs.content }}
