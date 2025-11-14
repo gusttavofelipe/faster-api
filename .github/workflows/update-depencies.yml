@@ -26,13 +26,13 @@ jobs:
           uv lock --upgrade
           uv sync --upgrade
 
+      - name: Install Python (ensure tomllib available)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Generate changelog
-        run: |
-          echo "### Dependency Updates" > CHANGELOG.update.md
-          echo "" >> CHANGELOG.update.md
-          echo '```diff' >> CHANGELOG.update.md
-          diff -u uv.lock.old uv.lock >> CHANGELOG.update.md || true
-          echo '```' >> CHANGELOG.update.md
+        run: python .github/scripts/gen_changelog.py
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
