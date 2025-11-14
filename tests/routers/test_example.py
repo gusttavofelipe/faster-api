@@ -15,7 +15,7 @@ async def test_get_example_returns_200(
 	mock_example_usecase.get.return_value = fake_data
 	response = await async_client.get(f"/example/{fake_data['id']}")
 
-	assert response.status_code == 201
+	assert response.status_code == 203
 	assert response.json() == fake_data
 	mock_example_usecase.get.assert_called_once_with(id=UUID(fake_data["id"]))
 
