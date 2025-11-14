@@ -18,21 +18,20 @@ jobs:
       - name: Add uv to PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Save old lockfile
-        run: cp uv.lock uv.lock.old
+      - name: Capture old lockfile
+        run: cp uv.lock /tmp/uv.lock.old
 
       - name: Update dependencies
         run: |
           uv lock --upgrade
           uv sync --upgrade
 
-      - name: Install Python (ensure tomllib available)
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Generate changelog
-        run: python .github/scripts/gen_changelog.py
+      - name: Generate inline diff for PR
+        id: diff
+        run: |
+          echo 'diff<<EOF' >> $GITHUB_OUTPUT
+          diff -u /tmp/uv.lock.old uv.lock || true >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
@@ -40,4 +39,8 @@ jobs:
           commit-message: "chore: update dependencies"
           branch: deps-update-${{ github.run_id }}
           title: "Update dependencies"
-          body-path: "CHANGELOG.update.md"
+          body: |
+            ### Dependency Changes
+            ```
+            ${{ steps.diff.outputs.diff }}
+            ```
