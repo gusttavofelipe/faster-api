@@ -1,5 +1,5 @@
-PODMAN_COMPOSE = podman-compose
-PODMAN_COMPOSE_FILE = podman-compose.yml
+DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE_FILE = docker-compose.yml
 
 .PHONY: build up down restart logs test clean
 
@@ -26,17 +26,17 @@ help:
 
 up:
 	@echo "Starting services..."
-	$(PODMAN_COMPOSE) -f $(PODMAN_COMPOSE_FILE) up -d
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d
 
 down:
 	@echo "Stopping services..."
-	$(PODMAN_COMPOSE) -f $(PODMAN_COMPOSE_FILE) down
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down
 
 restart: down up
 
 logs:
 	@echo "Showing logs..."
-	$(PODMAN_COMPOSE) -f $(PODMAN_COMPOSE_FILE) logs -f
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) logs -f
 
 clean:
 	@echo "Cleaning up..."

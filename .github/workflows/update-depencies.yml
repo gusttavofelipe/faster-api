@@ -26,12 +26,14 @@ jobs:
           uv lock --upgrade
           uv sync --upgrade
 
-      - name: Generate inline diff for PR
+      - name: Generate diff
         id: diff
         run: |
-          echo 'diff<<EOF' >> $GITHUB_OUTPUT
-          diff -u /tmp/uv.lock.old uv.lock || true >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          DIFF_OUTPUT=$(diff -u /tmp/uv.lock.old uv.lock || true)
+          DIFF_OUTPUT="${DIFF_OUTPUT//'%'/'%25'}"
+          DIFF_OUTPUT="${DIFF_OUTPUT//$'\n'/'%0A'}"
+          DIFF_OUTPUT="${DIFF_OUTPUT//$'\r'/'%0D'}"
+          echo "content=$DIFF_OUTPUT" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
@@ -42,5 +44,5 @@ jobs:
           body: |
             ### Dependency Changes
             ```
-            ${{ steps.diff.outputs.diff }}
+            ${{ steps.diff.outputs.content }}
             ```

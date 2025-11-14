@@ -14,7 +14,7 @@ from app.routers.example import router as example_router
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
 	"""Manages application startup and shutdown."""
 	try:
 		await DatabaseManager.test_connection()

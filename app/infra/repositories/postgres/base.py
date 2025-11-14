@@ -56,7 +56,7 @@ class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT])
 	) -> None:
 		async def get_batches(
 			iterable: Iterable[dict[str, Any]], size: int
-		) -> AsyncGenerator[list[dict[str, Any]], None]:
+		) -> AsyncGenerator[list[dict[str, Any]]]:
 			"""Generates batches of size `size` from any iterable."""
 
 			it: Iterator[dict[str, Any]] = iter(iterable)
