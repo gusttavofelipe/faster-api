@@ -7,7 +7,6 @@ on:
 jobs:
   auto-merge-deps:
     runs-on: ubuntu-latest
-    # Só roda se o PR foi criado pelo workflow de update dependencies
     if: startsWith(github.head_ref, 'deps-update-')
 
     steps:
