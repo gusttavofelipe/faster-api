@@ -1,24 +1,24 @@
-PODMAN_COMPOSE = podman-compose
-PODMAN_COMPOSE_FILE = podman-compose.yml
+DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE_FILE = docker-compose.yml
 
-.PHONY: build up down restart logs test clean
+.PHONY: help up down restart logs clean setup run cache migrate makemigration test coverage test-matching lintfix
 
 help:
 	@echo "Available commands:"
-	@echo "  make makemigration desc='msg'   - Create new migration"
-	@echo "  make migrate                           - Apply all migrations"
-	@echo "  make up                                - Start services"
-	@echo "  make down                              - Stop services"
-	@echo "  make restart                           - Restart services"
-	@echo "  make logs                              - Show logs"
-	@echo "  make clean                             - Remove unused Docker data"
-	@echo "  make setup                             - Setup project (venv, deps, pre-commit, migrations)"
-	@echo "  make run                               - Run FastAPI with uvicorn"
-	@echo "  make pycache                           - Remove __pycache__ and *.pyc files"
-	@echo "  make test                              - Run all tests"
-	@echo "  make test-matching N=pattern           - Run tests matching name pattern"
-	@echo "  make coverage                     - Run tests with coverage"
-	@echo "  make lintfix                           - Run pre-commit run for all files"
+	@echo "  make makemigration desc='msg'     - Create new migration"
+	@echo "  make migrate                      - Apply all migrations"
+	@echo "  make up                           - Start services"
+	@echo "  make down                         - Stop services"
+	@echo "  make restart                      - Restart services"
+	@echo "  make logs                         - Show logs"
+	@echo "  make clean                        - Remove unused Docker data"
+	@echo "  make setup                        - Setup project (venv, deps, pre-commit, migrations)"
+	@echo "  make run                          - Run FastAPI with uvicorn"
+	@echo "  make cache                        - Remove all cached files"
+	@echo "  make test                         - Run all tests"
+	@echo "  make test-matching N=pattern      - Run tests matching name pattern"
+	@echo "  make coverage                     - Run all tests with coverage"
+	@echo "  make lintfix                      - Run pre-commit run for all files"
 
 .env: .example.env
 	@cp .example.env .env || echo "NOTE: review your .env file comparing with .example.env"
@@ -26,21 +26,21 @@ help:
 
 up:
 	@echo "Starting services..."
-	$(PODMAN_COMPOSE) -f $(PODMAN_COMPOSE_FILE) up -d
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d
 
 down:
 	@echo "Stopping services..."
-	$(PODMAN_COMPOSE) -f $(PODMAN_COMPOSE_FILE) down
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down
 
 restart: down up
 
 logs:
 	@echo "Showing logs..."
-	$(PODMAN_COMPOSE) -f $(PODMAN_COMPOSE_FILE) logs -f
+	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) logs -f
 
 clean:
 	@echo "Cleaning up..."
-	podman system prune -a --volumes -f
+	docker system prune -a --volumes -f
 
 setup:
 	@echo "Setting up project..."
@@ -77,8 +77,5 @@ coverage:
 test-matching:
 	@uv run pytest -vv -k $(N)
 
-
 lintfix:
 	@uv run pre-commit run --all-files
-
-.PHONY: run test generate-coverage lint-check lint-fix
