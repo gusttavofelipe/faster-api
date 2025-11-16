@@ -3,8 +3,6 @@ enhance and use:
     Docker
     Pytest
     Kafka
-    GitHub Actions
-    bot to update dependencies
     OpenTelemetry / Grafana: observablity
     semantic-release
     Locust: load testing / stress test
