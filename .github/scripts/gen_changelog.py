@@ -22,7 +22,6 @@ def generate_summary(old_file: str, new_file: str, output_file: str) -> None:
 	added = []
 	removed = []
 
-	# Find updated and added packages
 	for name, new_ver in sorted(new_packages.items()):
 		if name in old_packages:
 			old_ver = old_packages[name]
@@ -31,12 +30,10 @@ def generate_summary(old_file: str, new_file: str, output_file: str) -> None:
 		else:
 			added.append(f"- {name}: {new_ver}")
 
-	# Find removed packages
 	for name, old_ver in sorted(old_packages.items()):
 		if name not in new_packages:
 			removed.append(f"- {name}: {old_ver}")
 
-	# Build summary
 	summary_parts = [
 		"### Updated",
 		"\n".join(updated) if updated else "(none)",
@@ -50,7 +47,6 @@ def generate_summary(old_file: str, new_file: str, output_file: str) -> None:
 
 	summary = "\n".join(summary_parts)
 
-	# Write to output file
 	with open(output_file, "w") as f:
 		f.write(summary)
 

@@ -1,9 +1,7 @@
+# TODO: update script to run in push as well
 name: Semantic Commit Check
 
 on:
-  push:
-    branches:
-      - "**"
   pull_request:
     types:
       - opened
