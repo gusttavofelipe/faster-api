@@ -1,0 +1,43 @@
+name: Auto-merge Dependencies PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-merge-deps:
+    runs-on: ubuntu-latest
+    # Só roda se o PR foi criado pelo workflow de update dependencies
+    if: startsWith(github.head_ref, 'deps-update-')
+
+    steps:
+      - name: Wait for status checks
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.head_ref }}
+          check-name: "lint"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Wait for tests
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.head_ref }}
+          check-name: "tests"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Auto-approve PR
+        uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge PR
+        uses: pascalgn/automerge-action@v0.16.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_LABELS: ""
+          MERGE_METHOD: merge
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_RETRIES: 6
+          MERGE_RETRY_SLEEP: 10000
