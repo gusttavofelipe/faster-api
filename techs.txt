@@ -9,8 +9,3 @@ enhance and use:
     semantic-release
     Locust: load testing / stress test
     Internationalization & Localization
-
-
-1. Linting e Formatação
-3. Auto-merge do Dependabot se os tests passarem
-8. Verificar Commits Convencionais
