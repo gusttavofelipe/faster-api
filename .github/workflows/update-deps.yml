@@ -49,3 +49,4 @@ jobs:
           branch: deps-update-${{ github.run_id }}
           title: "Update dependencies"
           body: ${{ steps.summary.outputs.content }}
+          push: true
