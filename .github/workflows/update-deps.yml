@@ -1,16 +1,15 @@
 name: Update Dependencies
-
 on:
   schedule:
     - cron: "0 12 * * *"
   workflow_dispatch:
-
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -45,8 +44,8 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           commit-message: "chore: update dependencies"
           branch: deps-update-${{ github.run_id }}
           title: "Update dependencies"
           body: ${{ steps.summary.outputs.content }}
-          push: true
