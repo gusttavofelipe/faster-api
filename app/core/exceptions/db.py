@@ -1,4 +1,7 @@
+"""app/core/exceptions/db.py"""
+
 from app.core.exceptions.base import CustomBaseException
+from app.core.i18n.manager import _
 
 
 class DatabaseConnectionError(CustomBaseException):
@@ -17,7 +20,7 @@ class DBOperationError(CustomBaseException):
 
 class ObjectNotFound(CustomBaseException):
 	def __init__(self, *args: object, message: str | None = None) -> None:
-		self.message = message or "Object Not Found"
+		self.message = message or _("Object Not Found")
 		super().__init__(*args, self.message)
 
 

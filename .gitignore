@@ -20,3 +20,6 @@ htmlcov
 # Linters / Refactoring tools
 .ruff_cache
 .ropeproject
+
+# binaries
+*.mo

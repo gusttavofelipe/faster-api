@@ -1,3 +1,5 @@
+"""app/domain/usecases/example.py"""
+
 from collections.abc import Generator, Iterator
 from itertools import chain
 from timeit import default_timer
@@ -13,6 +15,7 @@ from app.core.exceptions.db import (
 	ObjectAlreadyExistError,
 	ObjectNotFound,
 )
+from app.core.i18n.manager import _
 from app.core.logging import logger
 from app.domain.models.example import ExampleModel
 from app.domain.schemas.bulk_insert import BulkInsertCreate, BulkInsertResponse
@@ -50,7 +53,7 @@ class ExampleUsecase:
 			return ExampleResponse.model_validate(example_model)
 		except SQLAlchemyError as exc:
 			raise DBOperationError(
-				message=f"SQLAlchemy error occurred in {method_path}: {exc}"
+				message=f"{_("SQLAlchemy error occurred")} in {method_path}: {exc}"
 			)
 
 	async def query(

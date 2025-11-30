@@ -1,3 +1,5 @@
+"""app/main.py"""
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -9,6 +11,7 @@ from app.core.config import settings
 from app.core.exceptions.db import DatabaseConnectionError
 from app.core.exceptions.handlers import register_exception_handlers
 from app.core.logging import LOGGING_CONFIG, logger
+from app.core.middlewares.language import LanguageMiddleware
 from app.infra.db.manager import DatabaseManager
 from app.routers.example import router as example_router
 
@@ -42,10 +45,15 @@ class App(FastAPI):
 		)
 		self.__include_routers()
 		self.__register_exception_handlers()
+		self.__add_middlewares()
 
 	def __register_exception_handlers(self) -> None:
 		"""Registers all exception handlers for the application"""
 		register_exception_handlers(self)
+
+	def __add_middlewares(self) -> None:
+		"""Includes all predefined API routers into the application"""
+		self.add_middleware(LanguageMiddleware)
 
 	def __include_routers(self) -> None:
 		"""Includes all predefined API routers into the application"""
