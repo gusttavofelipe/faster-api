@@ -20,22 +20,8 @@ help:
 	@echo "  make coverage                     - Run all tests with coverage"
 	@echo "  make lintfix                      - Run pre-commit run for all files"
 
-env:
-	@if [ ! -f .env ]; then \
-		cp .example.env .env && echo ".env created"; \
-	else \
-		sort .example.env > .example.env.sorted; \
-		sort .env > .env.sorted; \
-		MISSING=$$(comm -23 .example.env.sorted .env.sorted); \
-		rm .example.env.sorted .env.sorted; \
-		if [ -z "$$MISSING" ]; then \
-			echo "Everything up to date or .env is ahead (unchanged)"; \
-		else \
-			cp .example.env .env && echo ".env updated"; \
-		fi; \
-	fi
 
-
+# Docker
 up:
 	@echo "Starting services..."
 	$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d
@@ -54,6 +40,23 @@ clean:
 	@echo "Cleaning up..."
 	docker system prune -a --volumes -f
 
+
+# Set up
+env:
+	@if [ ! -f .env ]; then \
+		cp .example.env .env && echo ".env created"; \
+	else \
+		sort .example.env > .example.env.sorted; \
+		sort .env > .env.sorted; \
+		MISSING=$$(comm -23 .example.env.sorted .env.sorted); \
+		rm .example.env.sorted .env.sorted; \
+		if [ -z "$$MISSING" ]; then \
+			echo "Everything up to date or .env is ahead (unchanged)"; \
+		else \
+			cp .example.env .env && echo ".env updated"; \
+		fi; \
+	fi
+
 setup:
 	@echo "Setting up project..."
 	@uv sync
@@ -61,9 +64,13 @@ setup:
 	@$(MAKE) -s migrate
 	@echo "Setup Completed."
 
+
+# App
 run:
 	@uv run python -m app.main
 
+
+# Utils
 cache:
 	@echo "Cleaning all cached files..."
 	@find . \( -name *.py[co] -o -name __pycache__ \) -delete
@@ -72,12 +79,16 @@ cache:
 	@rm -rf htmlcov
 	@echo "Done."
 
+
+# database migrations
 migrate:
 	@PYTHONPATH=$PYTHONPATH:$(pwd) uv run alembic upgrade head
 
 makemigration:
 	@PYTHONPATH=$PYTHONPATH:$(pwd) uv run alembic revision --autogenerate -m $(desc)
 
+
+# Tests
 test:
 	@uv run pytest
 
@@ -89,5 +100,18 @@ coverage:
 test-matching:
 	@uv run pytest -vv -k $(N)
 
+
+# Code formating
 lintfix:
 	@uv run pre-commit run --all-files
+
+
+# Internacionalization and Localization
+i18n-extract:
+	uv run pybabel extract -F app/core/i18n/babel.cfg -o app/core/i18n/locales/messages.pot app
+
+i18n-update:
+	uv run pybabel update -i app/core/i18n/locales/messages.pot -d app/core/i18n/locales
+
+i18n-compile:
+	uv run pybabel compile -d app/core/i18n/locales
