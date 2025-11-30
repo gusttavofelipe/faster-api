@@ -20,9 +20,21 @@ help:
 	@echo "  make coverage                     - Run all tests with coverage"
 	@echo "  make lintfix                      - Run pre-commit run for all files"
 
-.env: .example.env
-	@cp .example.env .env || echo "NOTE: review your .env file comparing with .example.env"
-	@touch .env
+env:
+	@if [ ! -f .env ]; then \
+		cp .example.env .env && echo ".env created"; \
+	else \
+		sort .example.env > .example.env.sorted; \
+		sort .env > .env.sorted; \
+		MISSING=$$(comm -23 .example.env.sorted .env.sorted); \
+		rm .example.env.sorted .env.sorted; \
+		if [ -z "$$MISSING" ]; then \
+			echo "Everything up to date or .env is ahead (unchanged)"; \
+		else \
+			cp .example.env .env && echo ".env updated"; \
+		fi; \
+	fi
+
 
 up:
 	@echo "Starting services..."
@@ -46,8 +58,8 @@ setup:
 	@echo "Setting up project..."
 	@uv sync
 	@uv run pre-commit install
-	@uv run alembic upgrade head
-	@echo "Setup Completed"
+	@$(MAKE) -s migrate
+	@echo "Setup Completed."
 
 run:
 	@uv run python -m app.main
