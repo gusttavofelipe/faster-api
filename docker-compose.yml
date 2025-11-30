@@ -9,4 +9,4 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - ./init-db:/docker-entrypoint-initdb.d
+      - ./app/infra/db/init:/docker-entrypoint-initdb.d
