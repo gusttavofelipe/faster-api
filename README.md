@@ -19,20 +19,21 @@ Clone the repository, then open it:
 git clone https://github.com/gusttavofelipe/faster-api.git
 ```
 
-Bring the database up:
-```bash
-make up
-```
-
 Copy and fill credentials from `.example.env` to `.env`:
 ```bash
 make env
+```
+
+Bring the database up:
+```bash
+make up
 ```
 
 Set up the project:
 ```bash
 make setup
 ```
+
 
 Run the API:
 ```bash
