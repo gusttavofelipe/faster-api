@@ -1,3 +1,5 @@
+"""app/infra/db/manager.py"""
+
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
@@ -58,19 +60,19 @@ class DatabaseManager:
 			dsn: str = settings.DATABASE_URL.replace("+asyncpg", "")
 			cls._pool = await create_pool(dsn=dsn, min_size=5, max_size=20)
 			# increase to min_size=10, max_size=50 if it's to insert millions
-		return cls._pool  # type: ignore
+		return cls._pool
 
 	@classmethod
 	async def test_connection(cls) -> bool:
 		"""Tests the database connection."""
-		session: AsyncSession = cls.get_sessionmaker()()
+		async_session = cls.get_sessionmaker()
 
-		try:
-			await session.execute(text("SELECT 1"))
-			return True
-		finally:
-			await session.close()
-		return False
+		async with async_session() as session:
+			try:
+				await session.execute(text("SELECT 1"))
+				return True
+			except Exception:
+				return False
 
 
 DatabaseDependency = Annotated[AsyncSession, Depends(DatabaseManager.get_session)]
