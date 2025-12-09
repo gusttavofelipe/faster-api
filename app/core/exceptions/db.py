@@ -6,15 +6,15 @@ from app.core.i18n.manager import _
 
 class DatabaseConnectionError(CustomBaseException):
 	def __init__(self, *args: object, message: str | None = None) -> None:
-		self.message = (
-			message or "An error occurred while trying to connect to the database"
+		self.message = message or _(
+			"An error occurred while trying to connect to the database"
 		)
 		super().__init__(*args, self.message)
 
 
 class DBOperationError(CustomBaseException):
 	def __init__(self, *args: object, message: str | None = None) -> None:
-		self.message = message or "A database operation error has occurred"
+		self.message = message or _("A database operation error has occurred")
 		super().__init__(*args, self.message)
 
 
@@ -26,5 +26,5 @@ class ObjectNotFound(CustomBaseException):
 
 class ObjectAlreadyExistError(CustomBaseException):
 	def __init__(self, *args: object, message: str | None = None) -> None:
-		self.message = message or "Objtect already exists"
+		self.message = message or _("Objtect already exists")
 		super().__init__(*args, self.message)

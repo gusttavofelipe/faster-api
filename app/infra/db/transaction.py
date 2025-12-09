@@ -42,8 +42,10 @@ class Transaction[OrmModelT: DeclarativeBaseModel]:
 				logger.error(f"Exception in transaction, rolling back: {error}")
 				await self.session.rollback()
 			else:
-				logger.info("Committing transaction")
+				logger.info("Committing transaction.")
 				await self.session.commit()
+				logger.info("Transaction commited.")
+
 		except SQLAlchemyError as exc:
 			logger.error(f"Error during commit/rollback: {exc}")
 			await self.session.rollback()

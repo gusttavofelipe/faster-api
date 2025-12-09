@@ -48,11 +48,9 @@ class DatabaseManager:
 	@classmethod
 	async def get_session(cls) -> AsyncGenerator[AsyncSession, None]:
 		"""Provides a database session with automatic cleanup."""
-		session = cls.get_sessionmaker()()
-		try:
+		async_session = cls.get_sessionmaker()
+		async with async_session() as session:
 			yield session
-		finally:
-			await session.close()
 
 	@classmethod
 	async def get_asyncpg_pool(cls) -> Pool:
@@ -68,11 +66,8 @@ class DatabaseManager:
 		async_session = cls.get_sessionmaker()
 
 		async with async_session() as session:
-			try:
-				await session.execute(text("SELECT 1"))
-				return True
-			except Exception:
-				return False
+			await session.execute(text("SELECT 1"))
+			return True
 
 
 DatabaseDependency = Annotated[AsyncSession, Depends(DatabaseManager.get_session)]

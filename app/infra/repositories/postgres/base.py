@@ -13,7 +13,7 @@ from app.domain.models.base import DeclarativeBaseModel
 from app.infra.db.helpers.query_builder import build_query
 from app.infra.db.manager import DatabaseManager
 from app.infra.db.transaction import Transaction
-from app.infra.repositories.interfaces.base import Repository
+from app.infra.repositories.interfaces.postgres import Repository
 
 
 class PostgresRepository[OrmModelT: DeclarativeBaseModel](Repository[OrmModelT]):
