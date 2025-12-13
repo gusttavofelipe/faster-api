@@ -1,0 +1,44 @@
+┌─────────────────┐
+│  Kafka Broker   │
+│ (Tópico exemplo)│
+└─────────┬───────┘
+          │ Evento chega
+          ▼
+┌─────────────────────────────┐
+│   EventConsumer             │
+│  (Consumer de eventos)      │
+│ - Recebe evento do Kafka    │
+│ - Seleciona handler pelo    │
+│   tópico                    │
+└─────────┬───────────────────┘
+          │ Chama handler
+          ▼
+┌───────────────────────────────┐
+│   EventHandler                │
+│  (Processa evento)            │
+│ - Valida dados com schemas    │
+│ - Log de recebimento          │
+│ - Chama Usecase correspondente│
+└─────────┬─────────────────────┘
+          │ Chama método do usecase
+          ▼
+┌─────────────────────────────┐
+│     Usecase                 │
+│ (Lógica de negócio)         │
+│ - Criação / Atualização /   │
+│   Deleção / Bulk insert     │
+│ - Interage com Repositórios │
+│ - Interage com DB ou outros │
+└─────────┬───────────────────┘
+          │ Retorna sucesso/erro
+          ▼
+┌─────────────────────────────┐
+│   Handler registra log      │
+│   de sucesso ou erro        │
+└─────────┬───────────────────┘
+          │ Próximo evento
+          ▼
+┌─────────────────┐
+│  Kafka Broker   │
+│ (Tópico exemplo)│
+└─────────────────┘

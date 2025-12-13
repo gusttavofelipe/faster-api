@@ -19,6 +19,11 @@ class Settings(BaseSettings):
 	REDIS_URL: str = ""
 	REDIS_PASSWORD: str = ""
 
+	KAFKA_BOOTSTRAP_SERVERS: str = ""
+	# KAFKA_TOPIC: str = ""
+	KAFKA_CLIENT_ID: str = ""
+	KAFKA_GROUP_ID: str = ""
+
 	model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(env_file=".env")
 
 

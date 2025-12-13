@@ -7,13 +7,14 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI
 
+from app.api.http.v1.routers.example import router as example_router
 from app.core.config import settings
 from app.core.exceptions.db import DatabaseConnectionError
 from app.core.exceptions.handlers import register_exception_handlers
 from app.core.logging import LOGGING_CONFIG, logger
 from app.core.middlewares.language import LanguageMiddleware
 from app.infra.db.manager import DatabaseManager
-from app.routers.example import router as example_router
+from app.infra.kafka.producer import kafka_producer
 
 
 @asynccontextmanager
@@ -23,9 +24,15 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
 		await DatabaseManager.test_connection()
 	except Exception as exc:
 		raise DatabaseConnectionError(message=f"Unable to connect to the database: {exc}")
-	logger.info("Database healthy")
+	logger.info("Database healthy.")
+
+	await kafka_producer.start()
+	logger.info("Kafka producer connected.")
 
 	yield
+
+	await kafka_producer.shutdown()
+	logger.info("Kafka producer shut down")
 
 
 class App(FastAPI):

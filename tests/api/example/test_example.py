@@ -2,8 +2,8 @@ from uuid import UUID
 
 import pytest
 
-from app.domain.schemas.bulk_insert import BulkInsertCreate
-from app.domain.schemas.example import ExampleCreate, ExampleQueryParams, ExampleUpdate
+from app.api.example.schemas import ExampleCreate, ExampleQueryParams, ExampleUpdate
+from app.shared.schemas.bulk_insert import BulkInsertCreate
 
 
 @pytest.mark.asyncio

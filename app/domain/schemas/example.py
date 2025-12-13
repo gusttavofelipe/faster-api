@@ -15,8 +15,8 @@ class ExampleBase(BaseSchema):
 		examples=["Gustavo"],
 	)
 	age: NonNegativeInt | None = Field(
-		default=None, gt=-1, lt=117, description="Age", examples=[20]
-	)  # type: ignore - this ingore shouldn't exist
+		default=None, lt=117, description="Age", examples=[20]
+	)
 
 
 class ExampleCreate(ExampleBase): ...
