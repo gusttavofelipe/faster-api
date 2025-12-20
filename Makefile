@@ -1,4 +1,4 @@
-DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE = docker compose
 DOCKER_COMPOSE_FILE = docker-compose.yml
 
 .PHONY: help up down restart logs clean setup run cache migrate makemigration test coverage test-matching lintfix

@@ -7,13 +7,13 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI
 
+from app.api.v1.routers.example import router as example_router
 from app.core.config import settings
 from app.core.exceptions.db import DatabaseConnectionError
 from app.core.exceptions.handlers import register_exception_handlers
 from app.core.logging import LOGGING_CONFIG, logger
 from app.core.middlewares.language import LanguageMiddleware
 from app.infra.db.manager import DatabaseManager
-from app.routers.example import router as example_router
 
 
 @asynccontextmanager

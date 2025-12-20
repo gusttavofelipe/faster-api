@@ -7,3 +7,5 @@ enhance and use:
     semantic-release
     Locust: load testing / stress test
     Internationalization & Localization
+    cache
+    Query optimization e N+1 problem
