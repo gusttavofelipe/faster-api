@@ -16,10 +16,9 @@ class Settings(BaseSettings):
 	POSTGRES_PASSWORD: str = ""
 	POSTGRES_PORT: str = ""
 
-	REDIS_URL: str = ""
-	REDIS_PASSWORD: str = ""
-
-	model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(env_file=".env")
+	model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
+		env_file=".env", extra="allow"
+	)
 
 
 @lru_cache

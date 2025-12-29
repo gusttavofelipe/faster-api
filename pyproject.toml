@@ -26,10 +26,13 @@ dev = [
     "pytest-randomly>=4.0.1",
     "ruff>=0.14.3",
 ]
-
+otel = [
+    "opentelemetry-distro>=0.60b1",
+    "opentelemetry-exporter-otlp>=1.39.1",
+]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 90
 
 [tool.ruff.format]
