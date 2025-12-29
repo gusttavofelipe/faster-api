@@ -46,7 +46,7 @@ class DatabaseManager:
 		return cls._sessionmaker
 
 	@classmethod
-	async def get_session(cls) -> AsyncGenerator[AsyncSession, None]:
+	async def get_session(cls) -> AsyncGenerator[AsyncSession]:
 		"""Provides a database session with automatic cleanup."""
 		async_session = cls.get_sessionmaker()
 		async with async_session() as session:
