@@ -17,7 +17,7 @@ from app.infra.db.manager import DatabaseManager
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_: FastAPI) -> AsyncGenerator:
 	"""Manages application startup and shutdown."""
 	try:
 		await DatabaseManager.test_connection()
@@ -69,5 +69,6 @@ if __name__ == "__main__":
 		host="0.0.0.0",
 		port=8001,
 		log_config=LOGGING_CONFIG,
-		reload=True,
+		# reload=True,
+		env_file=".env",
 	)

@@ -67,7 +67,7 @@ setup:
 
 # App
 run:
-	@uv run python -m app.main
+	uv run opentelemetry-instrument python -m app.main
 
 
 # Utils
@@ -115,3 +115,8 @@ i18n-update:
 
 i18n-compile:
 	uv run pybabel compile -d app/core/i18n/locales
+
+# Observability
+otel-instrument: # dev env
+	uv run python -m ensurepip --upgrade
+	uv run opentelemetry-bootstrap -a install
