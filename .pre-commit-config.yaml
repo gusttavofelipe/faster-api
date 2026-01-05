@@ -12,10 +12,13 @@ repos:
       - id: check-yaml
         args: [--unsafe]
       - id: end-of-file-fixer
+        exclude: \.md$
       - id: trailing-whitespace
+        exclude: \.md$
       - id: check-merge-conflict
       - id: debug-statements
       - id: mixed-line-ending
+        exclude: \.md$
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.19.0
     hooks:
@@ -27,7 +30,9 @@ repos:
     rev: v0.8.4
     hooks:
       - id: ruff-format
+        exclude: \.md$
       - id: ruff
         args:
           - --fix
           - --exit-non-zero-on-fix
+        exclude: \.md$

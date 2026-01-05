@@ -34,6 +34,7 @@ otel = [
 [tool.ruff]
 target-version = "py313"
 line-length = 90
+exclude = ["*.md"]
 
 [tool.ruff.format]
 indent-style = "tab"
