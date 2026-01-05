@@ -1,11 +1,10 @@
 
 enhance and use:
-    Docker
     Pytest
-    Kafka
-    OpenTelemetry / Grafana: observablity
+    Kafka - soon
+    OpenTelemetry / Grafana: observablity ✔
     semantic-release
     Locust: load testing / stress test
-    Internationalization & Localization
-    cache
-    Query optimization e N+1 problem
+    Internationalization & Localization ✔
+    Cache
+    Query optimization and N+1 problem

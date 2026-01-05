@@ -48,11 +48,11 @@ class App(FastAPI):
 		self.__add_middlewares()
 
 	def __register_exception_handlers(self) -> None:
-		"""Registers all exception handlers for the application"""
+		"""Registers all mapped exception handlers for the application"""
 		register_exception_handlers(self)
 
 	def __add_middlewares(self) -> None:
-		"""Includes all predefined API routers into the application"""
+		"""Includes all predefined API middlewares into the application"""
 		self.add_middleware(LanguageMiddleware)
 
 	def __include_routers(self) -> None:
