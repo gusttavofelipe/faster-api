@@ -8,3 +8,8 @@ enhance and use:
     Internationalization & Localization ✔
     Cache
     Query optimization and N+1 problem
+    Micro-services
+    Circuit Breaker
+    Retry
+    fallback
+    Oauth
