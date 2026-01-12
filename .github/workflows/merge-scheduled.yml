@@ -2,7 +2,7 @@ name: Scheduled PR Merge
 
 on:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: '46 23 * * *'
   workflow_dispatch:
 
 jobs:
@@ -24,4 +24,4 @@ jobs:
             exit 1
           fi
 
-          gh pr merge $PR_NUMBER --merge --delete-branch
+          gh pr merge $PR_NUMBER --merge
