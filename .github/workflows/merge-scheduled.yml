@@ -1,0 +1,27 @@
+name: Scheduled PR Merge
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  merge-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER=$(gh pr list --state open --head pr-to-merge --json number --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR não encontrada"
+            exit 1
+          fi
+
+          gh pr merge $PR_NUMBER --merge --delete-branch
