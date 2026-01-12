@@ -1,9 +1,12 @@
 name: Scheduled PR Merge
 
 on:
-  schedule:
-    - cron: '46 23 * * *'
   workflow_dispatch:
+    inputs:
+      delay_minutes:
+        description: 'Minutos para esperar antes do merge'
+        required: true
+        default: '2'
 
 jobs:
   merge-pr:
@@ -13,6 +16,11 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Wait until scheduled time
+        run: |
+          echo "Aguardando ${{ github.event.inputs.delay_minutes }} minutos..."
+          sleep $((${{ github.event.inputs.delay_minutes }} * 60))
+
       - name: Merge PR
         env:
           GH_TOKEN: ${{ github.token }}
