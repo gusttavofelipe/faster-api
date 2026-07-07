@@ -13,3 +13,140 @@ enhance and use:
     Feature flags
     Rate limiter
     Redis
+
+import json
+import logging
+from typing import Any, Optional, Union
+
+import aioboto3
+from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
+
+
+class SecretsManagerClient:
+    """
+    Wrapper assíncrono para o AWS Secrets Manager usando aioboto3.
+
+    A sessão (aioboto3.Session) é injetada via construtor, permitindo
+    reaproveitamento e facilitando testes (mock da sessão).
+    """
+
+    def __init__(self, session: aioboto3.Session, region_name: str = "us-east-1"):
+        self._session = session
+        self._region_name = region_name
+
+    async def get_secret(self, secret_name: str, parse_json: bool = True) -> Union[dict, str, bytes]:
+        """Obtém o valor de um secret. Se parse_json=True, tenta fazer json.loads."""
+        async with self._session.client("secretsmanager", region_name=self._region_name) as client:
+            try:
+                response = await client.get_secret_value(SecretId=secret_name)
+            except ClientError as e:
+                self._handle_client_error(e, secret_name)
+                raise
+
+            if "SecretString" in response:
+                secret = response["SecretString"]
+                if parse_json:
+                    try:
+                        return json.loads(secret)
+                    except json.JSONDecodeError:
+                        return secret
+                return secret
+            return response["SecretBinary"]
+
+    async def create_secret(
+        self,
+        name: str,
+        value: Union[dict, str],
+        description: Optional[str] = None,
+    ) -> dict:
+        """Cria um novo secret. Aceita dict (serializado para JSON) ou string."""
+        secret_string = json.dumps(value) if isinstance(value, dict) else value
+
+        async with self._session.client("secretsmanager", region_name=self._region_name) as client:
+            kwargs: dict[str, Any] = {"Name": name, "SecretString": secret_string}
+            if description:
+                kwargs["Description"] = description
+
+            try:
+                return await client.create_secret(**kwargs)
+            except ClientError as e:
+                self._handle_client_error(e, name)
+                raise
+
+    async def update_secret(self, name: str, value: Union[dict, str]) -> dict:
+        """Atualiza o valor de um secret existente."""
+        secret_string = json.dumps(value) if isinstance(value, dict) else value
+
+        async with self._session.client("secretsmanager", region_name=self._region_name) as client:
+            try:
+                return await client.update_secret(SecretId=name, SecretString=secret_string)
+            except ClientError as e:
+                self._handle_client_error(e, name)
+                raise
+
+    async def delete_secret(
+        self,
+        name: str,
+        recovery_window_days: Optional[int] = 7,
+        force_delete: bool = False,
+    ) -> dict:
+        """Deleta um secret. Use force_delete=True para deleção imediata e irreversível."""
+        async with self._session.client("secretsmanager", region_name=self._region_name) as client:
+            kwargs: dict[str, Any] = {"SecretId": name}
+            if force_delete:
+                kwargs["ForceDeleteWithoutRecovery"] = True
+            else:
+                kwargs["RecoveryWindowInDays"] = recovery_window_days
+
+            try:
+                return await client.delete_secret(**kwargs)
+            except ClientError as e:
+                self._handle_client_error(e, name)
+                raise
+
+    async def list_secrets(self, max_results: int = 100) -> list[dict]:
+        """Lista os secrets disponíveis (paginando automaticamente)."""
+        secrets = []
+        async with self._session.client("secretsmanager", region_name=self._region_name) as client:
+            paginator = client.get_paginator("list_secrets")
+            async for page in paginator.paginate(MaxResults=max_results):
+                secrets.extend(page.get("SecretList", []))
+        return secrets
+
+    @staticmethod
+    def _handle_client_error(error: ClientError, secret_name: str) -> None:
+        error_code = error.response["Error"]["Code"]
+        if error_code == "ResourceNotFoundException":
+            logger.warning("Secret '%s' não encontrado", secret_name)
+        elif error_code == "AccessDeniedException":
+            logger.error("Sem permissão para acessar o secret '%s'", secret_name)
+        elif error_code == "InvalidRequestException":
+            logger.error("Requisição inválida para o secret '%s'", secret_name)
+        else:
+            logger.error("Erro ao acessar secret '%s': %s", secret_name, error_code)
+
+
+# ---------------------------------------------------------------------------
+# Exemplo de uso
+# ---------------------------------------------------------------------------
+import asyncio
+
+
+async def main():
+    session = aioboto3.Session()  # ou aioboto3.Session(aws_access_key_id=..., ...)
+    sm_client = SecretsManagerClient(session=session, region_name="us-east-1")
+
+    secret = await sm_client.get_secret("meu/secret/nome")
+    print(secret)
+
+    await sm_client.create_secret("novo/secret", {"user": "admin", "password": "1234"})
+    await sm_client.update_secret("novo/secret", {"user": "admin", "password": "5678"})
+
+    secrets_list = await sm_client.list_secrets()
+    print(secrets_list)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
