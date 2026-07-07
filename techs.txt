@@ -13,3 +13,76 @@ enhance and use:
     Feature flags
     Rate limiter
     Redis
+
+import aioboto3
+from typing import Any
+
+class AWSServiceClient:
+    """Classe base pra qualquer client de serviço AWS."""
+    
+    service_name: str  # cada subclasse define, ex: "secretsmanager"
+
+    def __init__(self, session: aioboto3.Session, **client_kwargs: Any):
+        self._session = session
+        self._client_kwargs = client_kwargs
+
+    def _client(self):
+        """Retorna um context manager do client boto3 async."""
+        return self._session.client(self.service_name, **self._client_kwargs)
+---------------------------------------------------------------------------------
+
+import json
+from functools import lru_cache
+from botocore.exceptions import ClientError
+from .base import AWSServiceClient
+
+class SecretsManagerClient(AWSServiceClient):
+    service_name = "secretsmanager"
+
+    async def get_secret(self, secret_id: str) -> dict:
+        async with self._client() as client:
+            try:
+                resp = await client.get_secret_value(SecretId=secret_id)
+            except ClientError as e:
+                # aqui você trata erros específicos: ResourceNotFoundException, etc
+                raise RuntimeError(f"Erro ao buscar secret {secret_id}: {e}") from e
+
+        raw = resp.get("SecretString")
+        return json.loads(raw) if raw else {}
+
+    async def create_secret(self, name: str, value: dict) -> str:
+        async with self._client() as client:
+            resp = await client.create_secret(
+                Name=name,
+                SecretString=json.dumps(value),
+            )
+        return resp["ARN"]
+
+-----------------------------------
+
+# app/container.py
+import aioboto3
+from botocore.config import Config
+import httpx
+
+from app.aws.secrets_manager import SecretsManagerClient
+from app.aws.s3 import S3Client
+from app.aws.sqs import SQSClient
+
+class ContainerClients:
+    def __init__(self):
+        retry_config = Config(retries={"max_attempts": 5, "mode": "adaptive"})
+        session = aioboto3.Session(region_name="us-east-1")
+
+        # clients AWS, todos compartilhando a mesma session
+        self.secrets_manager = SecretsManagerClient(session, config=retry_config)
+        self.s3 = S3Client(session, config=retry_config)
+        self.sqs = SQSClient(session, config=retry_config)
+
+        # outros clients não-AWS podem morar aqui também
+        self.http_client = httpx.AsyncClient(timeout=httpx.Timeout(10.0))
+
+    async def aclose(self):
+        """Fecha o que precisa ser fechado explicitamente."""
+        await self.http_client.aclose()
+        # aioboto3 clients não precisam de close aqui (são abertos por request via async with)
